@@ -17,6 +17,8 @@
 
 package org.apache.commons.cli;
 
+import org.checkerframework.checker.nullness.qual.Nullable;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -482,8 +484,8 @@ public class HelpFormatter
      * @param autoUsage whether to print an automatically generated 
      * usage statement
      */
-    public void printHelp(final int width, final String cmdLineSyntax, final String header,
-                          final Options options, final String footer, final boolean autoUsage)
+    public void printHelp(final int width, final String cmdLineSyntax, @Nullable final String header,
+                          final Options options, @Nullable final String footer, final boolean autoUsage)
     {
         final PrintWriter pw = new PrintWriter(System.out);
 
@@ -536,8 +538,8 @@ public class HelpFormatter
      * @throws IllegalStateException if there is no room to print a line
      */
     public void printHelp(final PrintWriter pw, final int width, final String cmdLineSyntax,
-                          final String header, final Options options, final int leftPad,
-                          final int descPad, final String footer, final boolean autoUsage)
+                          @Nullable final String header, final Options options, final int leftPad,
+                          final int descPad, @Nullable final String footer, final boolean autoUsage)
     {
         if (cmdLineSyntax == null || cmdLineSyntax.length() == 0)
         {
@@ -691,12 +693,13 @@ public class HelpFormatter
         {
             buff.append("--").append(option.getLongOpt());
         }
-        
+
+        String argName = option.getArgName();
         // if the Option has a value and a non blank argname
-        if (option.hasArg() && (option.getArgName() == null || option.getArgName().length() != 0))
+        if (option.hasArg() && (argName == null || argName.length() != 0))
         {
             buff.append(option.getOpt() == null ? longOptSeparator : " ");
-            buff.append("<").append(option.getArgName() != null ? option.getArgName() : getArgName()).append(">");
+            buff.append("<").append(argName != null ? argName : getArgName()).append(">");
         }
         
         // if the Option is not a required option

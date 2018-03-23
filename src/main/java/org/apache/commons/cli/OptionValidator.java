@@ -17,6 +17,8 @@
 
 package org.apache.commons.cli;
 
+import org.checkerframework.checker.nullness.qual.Nullable;
+
 /**
  * Validates an Option string.
  *
@@ -41,7 +43,7 @@ final class OptionValidator
      * @param opt The option string to validate, may be null
      * @throws IllegalArgumentException if the Option is not valid.
      */
-    static void validateOption(final String opt) throws IllegalArgumentException
+    static void validateOption(@Nullable final String opt) throws IllegalArgumentException
     {
         // if opt is NULL do not check further
         if (opt == null)

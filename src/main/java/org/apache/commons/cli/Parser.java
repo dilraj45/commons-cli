@@ -17,6 +17,11 @@
 
 package org.apache.commons.cli;
 
+import org.checkerframework.checker.nullness.qual.EnsuresNonNull;
+import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
+import org.checkerframework.checker.nullness.qual.RequiresNonNull;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
@@ -33,26 +38,27 @@ import java.util.Properties;
 public abstract class Parser implements CommandLineParser
 {
     /** commandline instance */
-    protected CommandLine cmd;
+    @MonotonicNonNull protected CommandLine cmd;
 
     /** current Options */
-    private Options options;
+    @MonotonicNonNull private Options options;
 
     /** list of required options strings */
-    private List requiredOptions;
+    @MonotonicNonNull private List requiredOptions;
 
+    @EnsuresNonNull({"this.options", "this.requiredOptions"})
     protected void setOptions(final Options options)
     {
         this.options = options;
         this.requiredOptions = new ArrayList(options.getRequiredOptions());
     }
 
-    protected Options getOptions()
+    protected @Nullable Options getOptions()
     {
         return options;
     }
 
-    protected List getRequiredOptions()
+    protected @Nullable List getRequiredOptions()
     {
         return requiredOptions;
     }
@@ -69,7 +75,7 @@ public abstract class Parser implements CommandLineParser
      * @throws ParseException if there are any problems encountered
      *                        while parsing the command line tokens.
      */
-    protected abstract String[] flatten(Options opts, String[] arguments, boolean stopAtNonOption)
+    protected abstract String[] flatten(Options opts, String [] arguments, boolean stopAtNonOption)
             throws ParseException;
 
     /**
@@ -141,7 +147,7 @@ public abstract class Parser implements CommandLineParser
      *
      * @since 1.1
      */
-    public CommandLine parse(final Options options, String[] arguments, final Properties properties, final boolean stopAtNonOption)
+    public CommandLine parse(final Options options, String @Nullable [] arguments, @Nullable final Properties properties, final boolean stopAtNonOption)
             throws ParseException
     {
         // clear out the data in options in case it's been used before (CLI-71)
@@ -168,7 +174,7 @@ public abstract class Parser implements CommandLineParser
             arguments = new String[0];
         }
 
-        final List<String> tokenList = Arrays.asList(flatten(getOptions(), arguments, stopAtNonOption));
+        final List<String> tokenList = Arrays.asList(flatten(options, arguments, stopAtNonOption));
 
         final ListIterator<String> iterator = tokenList.listIterator();
 
@@ -199,7 +205,8 @@ public abstract class Parser implements CommandLineParser
             // the value is an option
             else if (t.startsWith("-"))
             {
-                if (stopAtNonOption && !getOptions().hasOption(t))
+                Options opts = getOptions();
+                if (stopAtNonOption && opts !=null && !opts.hasOption(t))
                 {
                     eatTheRest = true;
                     cmd.addArg(t);
@@ -250,7 +257,7 @@ public abstract class Parser implements CommandLineParser
      * @throws ParseException if there are any problems encountered
      *                        while processing the properties.
      */
-    protected void processProperties(final Properties properties) throws ParseException
+    protected void processProperties(@Nullable final Properties properties) throws ParseException
     {
         if (properties == null)
         {
@@ -259,30 +266,33 @@ public abstract class Parser implements CommandLineParser
 
         for (final Enumeration<?> e = properties.propertyNames(); e.hasMoreElements();)
         {
-            final String option = e.nextElement().toString();
+            Object nextElement = e.nextElement();
+            final String option = nextElement == null ? null : nextElement.toString();
             
-            final Option opt = options.getOption(option);
+            final Option opt = options != null? options.getOption(option) : null;
             if (opt == null)
             {
                 throw new UnrecognizedOptionException("Default option wasn't defined", option);
             }
             
             // if the option is part of a group, check if another option of the group has been selected
-            final OptionGroup group = options.getOptionGroup(opt);
+            final OptionGroup group = options != null ? options.getOptionGroup(opt) : null;
             final boolean selected = group != null && group.getSelected() != null;
             
-            if (!cmd.hasOption(option) && !selected)
+            if (cmd != null && !cmd.hasOption(option) && !selected)
             {
                 // get the value from the properties instance
-                final String value = properties.getProperty(option);
+                final String value = option != null ? properties.getProperty(option) : null;
 
                 if (opt.hasArg())
                 {
-                    if (opt.getValues() == null || opt.getValues().length == 0)
+                    String[] optValues = opt.getValues();
+                    if (optValues == null || optValues.length == 0)
                     {
                         try
                         {
-                            opt.addValueForProcessing(value);
+                            if (value != null)
+                                opt.addValueForProcessing(value);
                         }
                         catch (final RuntimeException exp) //NOPMD
                         {
@@ -314,7 +324,8 @@ public abstract class Parser implements CommandLineParser
     protected void checkRequiredOptions() throws MissingOptionException
     {
         // if there are required options that have not been processed
-        if (!getRequiredOptions().isEmpty())
+        List requiredOptions = getRequiredOptions();
+        if (requiredOptions == null || !requiredOptions.isEmpty())
         {
             throw new MissingOptionException(getRequiredOptions());
         }
@@ -339,7 +350,8 @@ public abstract class Parser implements CommandLineParser
             final String str = iter.next();
             
             // found an Option, not an argument
-            if (getOptions().hasOption(str) && str.startsWith("-"))
+            Options opts = getOptions();
+            if (opts != null && opts.hasOption(str) && str.startsWith("-"))
             {
                 iter.previous();
                 break;
@@ -372,9 +384,11 @@ public abstract class Parser implements CommandLineParser
      *
      * @throws ParseException if <code>arg</code> does not represent an Option
      */
+    @RequiresNonNull("cmd")
     protected void processOption(final String arg, final ListIterator<String> iter) throws ParseException
     {
-        final boolean hasOption = getOptions().hasOption(arg);
+        final Options opts = getOptions();
+        final boolean hasOption = opts != null && opts.hasOption(arg);
 
         // if there is no option throw an UnrecognizedOptionException
         if (!hasOption)
@@ -383,13 +397,14 @@ public abstract class Parser implements CommandLineParser
         }
 
         // get the option represented by arg
-        final Option opt = (Option) getOptions().getOption(arg).clone();
-        
+        final Option tmpOpt = opts != null ? opts.getOption(arg) : null;
+        final Option opt = tmpOpt == null? null : (Option) tmpOpt.clone();
+
         // update the required options and groups
         updateRequiredOptions(opt);
         
         // if the option takes an argument value
-        if (opt.hasArg())
+        if (opt != null && opt.hasArg())
         {
             processArgs(opt, iter);
         }
@@ -403,24 +418,30 @@ public abstract class Parser implements CommandLineParser
      * 
      * @param opt
      */
-    private void updateRequiredOptions(final Option opt) throws ParseException
+    private void updateRequiredOptions(@Nullable final Option opt) throws ParseException
     {
         // if the option is a required option remove the option from
         // the requiredOptions list
-        if (opt.isRequired())
+        List requiredOptions = getRequiredOptions();
+        if (opt != null && opt.isRequired() && requiredOptions != null)
         {
-            getRequiredOptions().remove(opt.getKey());
+            requiredOptions.remove(opt.getKey());
         }
 
         // if the option is in an OptionGroup make that option the selected
         // option of the group
-        if (getOptions().getOptionGroup(opt) != null)
+        Options opts = getOptions();
+        if (opts != null && opts.getOptionGroup(opt) != null)
         {
-            final OptionGroup group = getOptions().getOptionGroup(opt);
+            final OptionGroup group = opts.getOptionGroup(opt);
 
-            if (group.isRequired())
+            if (group == null)
+                return;
+
+            if (group.isRequired() && requiredOptions != null)
             {
-                getRequiredOptions().remove(group);
+
+                requiredOptions.remove(group);
             }
 
             group.setSelected(opt);

@@ -17,6 +17,9 @@
 
 package org.apache.commons.cli;
 
+import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
+
 /**
  * Thrown when more than one option in an option group
  * has been provided.
@@ -29,10 +32,10 @@ public class AlreadySelectedException extends ParseException
     private static final long serialVersionUID = 3674381532418544760L;
 
     /** The option group selected. */
-    private OptionGroup group;
+    @MonotonicNonNull private OptionGroup group;
 
     /** The option that triggered the exception. */
-    private Option option;
+    @MonotonicNonNull private Option option;
 
     /**
      * Construct a new <code>AlreadySelectedException</code>
@@ -67,7 +70,7 @@ public class AlreadySelectedException extends ParseException
      * @return the related option group
      * @since 1.2
      */
-    public OptionGroup getOptionGroup()
+    public @Nullable OptionGroup getOptionGroup()
     {
         return group;
     }
@@ -78,7 +81,7 @@ public class AlreadySelectedException extends ParseException
      * @return the related option
      * @since 1.2
      */
-    public Option getOption()
+    public @Nullable Option getOption()
     {
         return option;
     }

@@ -17,6 +17,8 @@
 
 package org.apache.commons.cli;
 
+import org.checkerframework.checker.nullness.qual.Nullable;
+
 /**
  * Contains useful helper methods for classes within this package.
  */
@@ -30,7 +32,7 @@ final class Util
      *
      * @return the new String.
      */
-    static String stripLeadingHyphens(final String str)
+    static @Nullable String stripLeadingHyphens(@Nullable final String str)
     {
         if (str == null)
         {

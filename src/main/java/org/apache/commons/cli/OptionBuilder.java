@@ -17,6 +17,8 @@
 
 package org.apache.commons.cli;
 
+import org.checkerframework.checker.nullness.qual.Nullable;
+
 /**
  * OptionBuilder allows the user to create Options using descriptive methods.
  * <p>
@@ -32,13 +34,13 @@ package org.apache.commons.cli;
 public final class OptionBuilder
 {
     /** long option */
-    private static String longopt;
+    @Nullable private static String longopt;
 
     /** option description */
-    private static String description;
+    @Nullable private static String description;
 
     /** argument name */
-    private static String argName;
+    @Nullable private static String argName;
 
     /** is required? */
     private static boolean required;
@@ -47,7 +49,7 @@ public final class OptionBuilder
     private static int numberOfArgs = Option.UNINITIALIZED;
 
     /** option type */
-    private static Class<?> type;
+    @Nullable private static Class<?> type;
 
     /** option can have an optional argument value */
     private static boolean optionalArg;
@@ -334,7 +336,7 @@ public final class OptionBuilder
      * @throws IllegalArgumentException if <code>opt</code> is not
      * a valid character.  See Option.
      */
-    public static Option create(final char opt) throws IllegalArgumentException
+    public static @Nullable Option create(final char opt) throws IllegalArgumentException
     {
         return create(String.valueOf(opt));
     }
@@ -345,7 +347,7 @@ public final class OptionBuilder
      * @return the Option instance
      * @throws IllegalArgumentException if <code>longOpt</code> has not been set.
      */
-    public static Option create() throws IllegalArgumentException
+    public static @Nullable Option create() throws IllegalArgumentException
     {
         if (longopt == null)
         {
@@ -366,7 +368,7 @@ public final class OptionBuilder
      * @throws IllegalArgumentException if <code>opt</code> is not
      * a valid character.  See Option.
      */
-    public static Option create(final String opt) throws IllegalArgumentException
+    public static @Nullable Option create(@Nullable final String opt) throws IllegalArgumentException
     {
         Option option = null;
         try

@@ -17,6 +17,8 @@
 
 package org.apache.commons.cli;
 
+import org.checkerframework.checker.nullness.qual.Nullable;
+
 /**
  * Thrown when an option requiring an argument
  * is not provided with an argument.
@@ -29,7 +31,7 @@ public class MissingArgumentException extends ParseException
     private static final long serialVersionUID = -7098538588704965017L;
 
     /** The option requiring additional arguments */
-    private Option option;
+    @Nullable private Option option;
 
     /**
      * Construct a new <code>MissingArgumentException</code>
@@ -62,7 +64,7 @@ public class MissingArgumentException extends ParseException
      * @return the related option
      * @since 1.2
      */
-    public Option getOption()
+    public @Nullable Option getOption()
     {
         return option;
     }

@@ -17,6 +17,8 @@
 
 package org.apache.commons.cli;
 
+import org.checkerframework.checker.nullness.qual.Nullable;
+
 /**
  * Base for Exceptions thrown during parsing of a command-line.
  */
@@ -33,7 +35,7 @@ public class ParseException extends Exception
      *
      * @param message the detail message
      */
-    public ParseException(final String message)
+    public ParseException(@Nullable final String message)
     {
         super(message);
     }

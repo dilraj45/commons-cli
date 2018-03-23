@@ -17,6 +17,9 @@
 
 package org.apache.commons.cli;
 
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -44,9 +47,9 @@ public class TypeHandler
      * the value of <code>str</code>.
      * @throws ParseException if the value creation for the given object type failed
      */
-    public static Object createValue(final String str, final Object obj) throws ParseException
+    public static Object createValue(final String str, @Nullable final Object obj) throws ParseException
     {
-        return createValue(str, (Class<?>) obj);
+        return createValue(str, (Class<@NonNull ?>) obj);
     }
 
     /**
@@ -60,7 +63,7 @@ public class TypeHandler
      * @throws ParseException if the value creation for the given class failed
      */
     @SuppressWarnings("unchecked") // returned value will have type T because it is fixed by clazz
-    public static <T> T createValue(final String str, final Class<T> clazz) throws ParseException
+    public static <T> T createValue(final String str, @Nullable final Class<T> clazz) throws ParseException
     {
         if (PatternOptionBuilder.STRING_VALUE == clazz)
         {
@@ -188,7 +191,7 @@ public class TypeHandler
      * otherwise return null.
      * @throws UnsupportedOperationException always
      */
-    public static Date createDate(final String str)
+    public static @Nullable Date createDate(final String str)
     {
         throw new UnsupportedOperationException("Not yet implemented");
     }

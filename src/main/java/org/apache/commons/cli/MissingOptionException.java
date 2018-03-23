@@ -17,6 +17,9 @@
 
 package org.apache.commons.cli;
 
+import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
+
 import java.util.List;
 import java.util.Iterator;
 
@@ -29,7 +32,7 @@ public class MissingOptionException extends ParseException
     private static final long serialVersionUID = 8161889051578563249L;
 
     /** The list of missing options and groups */
-    private List missingOptions;
+    @Nullable private List missingOptions;
 
     /**
      * Construct a new <code>MissingSelectedException</code>
@@ -49,7 +52,7 @@ public class MissingOptionException extends ParseException
      * @param missingOptions the list of missing options and groups
      * @since 1.2
      */
-    public MissingOptionException(final List missingOptions)
+    public MissingOptionException(@Nullable final List missingOptions)
     {
         this(createMessage(missingOptions));
         this.missingOptions = missingOptions;
@@ -62,7 +65,7 @@ public class MissingOptionException extends ParseException
      *         options, and OptionGroup instances for required option groups.
      * @since 1.2
      */
-    public List getMissingOptions()
+    public @Nullable List getMissingOptions()
     {
         return missingOptions;
     }
@@ -73,9 +76,15 @@ public class MissingOptionException extends ParseException
      * @param missingOptions the list of missing options and groups
      * @since 1.2
      */
-    private static String createMessage(final List<?> missingOptions)
+    private static String createMessage(@Nullable final List<?> missingOptions)
     {
         final StringBuilder buf = new StringBuilder("Missing required option");
+
+        if (missingOptions == null) {
+            buf.append(" null");
+            return buf.toString();
+        }
+
         buf.append(missingOptions.size() == 1 ? "" : "s");
         buf.append(": ");
 

@@ -17,6 +17,8 @@
 
 package org.apache.commons.cli;
 
+import org.checkerframework.checker.nullness.qual.Nullable;
+
 /**
  * Exception thrown during parsing signalling an unrecognized
  * option was seen.
@@ -29,7 +31,7 @@ public class UnrecognizedOptionException extends ParseException
     private static final long serialVersionUID = -252504690284625623L;
 
     /** The  unrecognized option */
-    private String option;
+    @Nullable private String option;
 
     /**
      * Construct a new <code>UnrecognizedArgumentException</code>
@@ -50,7 +52,7 @@ public class UnrecognizedOptionException extends ParseException
      * @param option  the unrecognized option
      * @since 1.2
      */
-    public UnrecognizedOptionException(final String message, final String option)
+    public UnrecognizedOptionException(final String message,@Nullable final String option)
     {
         this(message);
         this.option = option;
@@ -62,7 +64,7 @@ public class UnrecognizedOptionException extends ParseException
      * @return the related option
      * @since 1.2
      */
-    public String getOption()
+    public @Nullable String getOption()
     {
         return option;
     }

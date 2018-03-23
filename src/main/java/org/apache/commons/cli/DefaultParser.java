@@ -17,6 +17,9 @@
 
 package org.apache.commons.cli;
 
+import jdk.nashorn.internal.ir.RuntimeNode;
+import org.checkerframework.checker.nullness.qual.*;
+
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
@@ -30,10 +33,10 @@ import java.util.Properties;
 public class DefaultParser implements CommandLineParser
 {
     /** The command-line instance. */
-    protected CommandLine cmd;
+    @MonotonicNonNull protected CommandLine cmd;
     
     /** The current options. */
-    protected Options options;
+    @MonotonicNonNull protected Options options;
 
     /**
      * Flag indicating how unrecognized tokens are handled. <tt>true</tt> to stop
@@ -43,16 +46,16 @@ public class DefaultParser implements CommandLineParser
     protected boolean stopAtNonOption;
 
     /** The token currently processed. */
-    protected String currentToken;
+    @MonotonicNonNull protected String currentToken;
  
     /** The last option parsed. */
-    protected Option currentOption;
+    @Nullable protected Option currentOption;
  
     /** Flag indicating if tokens should no longer be analyzed and simply added as arguments of the command line. */
     protected boolean skipParsing;
  
     /** The required options and groups expected to be found when parsing the command line. */
-    protected List expectedOpts;
+    @MonotonicNonNull protected List expectedOpts;
 
     /** Flag indicating if partial matching of long options is supported. */
     private  boolean allowPartialMatching;
@@ -117,7 +120,7 @@ public class DefaultParser implements CommandLineParser
      * @throws ParseException if there are any problems encountered
      * while parsing the command line tokens.
      */
-    public CommandLine parse(final Options options, final String[] arguments, final Properties properties) throws ParseException
+    public CommandLine parse(final Options options, final String[] arguments, @Nullable final Properties properties) throws ParseException
     {
         return parse(options, arguments, properties, false);
     }
@@ -142,7 +145,8 @@ public class DefaultParser implements CommandLineParser
      * @throws ParseException if there are any problems encountered
      * while parsing the command line tokens.
      */
-    public CommandLine parse(final Options options, final String[] arguments, final Properties properties, final boolean stopAtNonOption)
+    @EnsuresNonNull({"this.options", "this.expectedOpts"})
+    public CommandLine parse(final Options options, final String[] arguments,@Nullable final Properties properties, final boolean stopAtNonOption)
             throws ParseException
     {
         this.options = options;
@@ -183,7 +187,8 @@ public class DefaultParser implements CommandLineParser
      *
      * @param properties The value properties to be processed.
      */
-    private void handleProperties(final Properties properties) throws ParseException
+    @RequiresNonNull({"cmd", "options", "expectedOpts"})
+    private void handleProperties(@Nullable final Properties properties) throws ParseException
     {
         if (properties == null)
         {
@@ -192,7 +197,11 @@ public class DefaultParser implements CommandLineParser
 
         for (final Enumeration<?> e = properties.propertyNames(); e.hasMoreElements();)
         {
-            final String option = e.nextElement().toString();
+            final Object nextElement = e.nextElement();
+            if (nextElement == null) {
+                throw new RuntimeException("Encountered a null element in enumerations : properties");
+            }
+            final String option = nextElement.toString();
 
             final Option opt = options.getOption(option);
             if (opt == null)
@@ -209,9 +218,15 @@ public class DefaultParser implements CommandLineParser
                 // get the value from the properties
                 final String value = properties.getProperty(option);
 
+                if (value == null) {
+                    // todo: verify the expected behaviour in case value is null
+                    throw new IllegalArgumentException("Value obtained from an option cannot be null in properties");
+                }
+
                 if (opt.hasArg())
                 {
-                    if (opt.getValues() == null || opt.getValues().length == 0)
+                    String [] values = opt.getValues();
+                    if (values == null || values.length == 0)
                     {
                         opt.addValueForProcessing(value);
                     }
@@ -240,7 +255,7 @@ public class DefaultParser implements CommandLineParser
     protected void checkRequiredOptions() throws MissingOptionException
     {
         // if there are required options that have not been processed
-        if (!expectedOpts.isEmpty())
+        if (expectedOpts != null && !expectedOpts.isEmpty())
         {
             throw new MissingOptionException(expectedOpts);
         }
@@ -264,6 +279,7 @@ public class DefaultParser implements CommandLineParser
      * @param token the command line token to handle
      * @throws ParseException
      */
+    @RequiresNonNull({"cmd", "options", "expectedOpts"})
     private void handleToken(final String token) throws ParseException
     {
         currentToken = token;
@@ -276,7 +292,7 @@ public class DefaultParser implements CommandLineParser
         {
             skipParsing = true;
         }
-        else if (currentOption != null && currentOption.acceptsArg() && isArgument(token))
+        else if (isArgument(token) && currentOption != null && currentOption.acceptsArg())
         {
             currentOption.addValueForProcessing(Util.stripLeadingAndTrailingQuotes(token));
         }
@@ -304,6 +320,7 @@ public class DefaultParser implements CommandLineParser
      *
      * @param token
      */
+    @RequiresNonNull("options")
     private boolean isArgument(final String token)
     {
         return !isOption(token) || isNegativeNumber(token);
@@ -332,6 +349,7 @@ public class DefaultParser implements CommandLineParser
      *
      * @param token
      */
+    @RequiresNonNull("options")
     private boolean isOption(final String token)
     {
         return isLongOption(token) || isShortOption(token);
@@ -353,12 +371,12 @@ public class DefaultParser implements CommandLineParser
         // remove leading "-" and "=value"
         final int pos = token.indexOf("=");
         final String optName = pos == -1 ? token.substring(1) : token.substring(1, pos);
-        if (options.hasShortOption(optName))
+        if (options != null && options.hasShortOption(optName))
         {
             return true;
         }
         // check for several concatenated short options
-        return optName.length() > 0 && options.hasShortOption(String.valueOf(optName.charAt(0)));
+        return optName.length() > 0 && options != null && options.hasShortOption(String.valueOf(optName.charAt(0)));
     }
 
     /**
@@ -366,6 +384,7 @@ public class DefaultParser implements CommandLineParser
      *
      * @param token
      */
+    @RequiresNonNull("options")
     private boolean isLongOption(final String token)
     {
         if (!token.startsWith("-") || token.length() == 1)
@@ -399,6 +418,7 @@ public class DefaultParser implements CommandLineParser
      *
      * @param token the command line token to handle
      */
+    @RequiresNonNull("cmd")
     private void handleUnknownToken(final String token) throws ParseException
     {
         if (token.startsWith("-") && token.length() > 1 && !stopAtNonOption)
@@ -423,6 +443,7 @@ public class DefaultParser implements CommandLineParser
      *
      * @param token the command line token to handle
      */
+    @RequiresNonNull({"cmd", "options", "currentToken", "expectedOpts"})
     private void handleLongOption(final String token) throws ParseException
     {
         if (token.indexOf('=') == -1)
@@ -445,6 +466,7 @@ public class DefaultParser implements CommandLineParser
      * 
      * @param token the command line token to handle
      */
+    @RequiresNonNull({"options", "cmd", "expectedOpts", "currentToken"})
     private void handleLongOptionWithoutEqual(final String token) throws ParseException
     {
         final List<String> matchingOpts = getMatchingLongOptions(token);
@@ -473,6 +495,7 @@ public class DefaultParser implements CommandLineParser
      *
      * @param token the command line token to handle
      */
+    @RequiresNonNull({"cmd", "options", "currentToken", "expectedOpts"})
     private void handleLongOptionWithEqual(final String token) throws ParseException
     {
         final int pos = token.indexOf('=');
@@ -495,9 +518,14 @@ public class DefaultParser implements CommandLineParser
             final String key = options.hasLongOption(opt) ? opt : matchingOpts.get(0);
             final Option option = options.getOption(key);
 
-            if (option.acceptsArg())
+            if (option != null && option.acceptsArg())
             {
                 handleOption(option);
+                if (currentOption == null) {
+                    // todo: fix exception
+                    throw new UnrecognizedOptionException("Encountered null value for 'currentOption'" +
+                            " while processing");
+                }
                 currentOption.addValueForProcessing(value);
                 currentOption = null;
             }
@@ -527,9 +555,15 @@ public class DefaultParser implements CommandLineParser
      *
      * @param token the command line token to handle
      */
+    @RequiresNonNull({"options", "cmd", "currentToken", "expectedOpts"})
     private void handleShortAndLongOption(final String token) throws ParseException
     {
         final String t = Util.stripLeadingHyphens(token);
+
+        if (t == null) {
+            //todo: fix exception
+            throw new RuntimeException("Token value extracted to be null");
+        }
 
         final int pos = t.indexOf('=');
 
@@ -561,10 +595,13 @@ public class DefaultParser implements CommandLineParser
             {
                 // look for a long prefix (-Xmx512m)
                 final String opt = getLongPrefix(t);
-
-                if (opt != null && options.getOption(opt).acceptsArg())
+                Option option =  options.getOption(opt);
+                if (opt != null && option != null && option.acceptsArg())
                 {
-                    handleOption(options.getOption(opt));
+                handleOption(options.getOption(opt));
+                    if (currentOption == null) {
+                        throw new UnrecognizedOptionException("Cannot add value to a null option");
+                    }
                     currentOption.addValueForProcessing(t.substring(opt.length()));
                     currentOption = null;
                 }
@@ -572,6 +609,9 @@ public class DefaultParser implements CommandLineParser
                 {
                     // -SV1 (-Dflag)
                     handleOption(options.getOption(t.substring(0, 1)));
+                    if (currentOption == null) {
+                        throw new UnrecognizedOptionException("Cannot add value to a null option");
+                    }
                     currentOption.addValueForProcessing(t.substring(1));
                     currentOption = null;
                 }
@@ -595,6 +635,9 @@ public class DefaultParser implements CommandLineParser
                 if (option != null && option.acceptsArg())
                 {
                     handleOption(option);
+                    if (currentOption == null) {
+                        throw new UnrecognizedOptionException("Cannot add value to an null option");
+                    }
                     currentOption.addValueForProcessing(value);
                     currentOption = null;
                 }
@@ -607,6 +650,9 @@ public class DefaultParser implements CommandLineParser
             {
                 // -SV1=V2 (-Dkey=value)
                 handleOption(options.getOption(opt.substring(0, 1)));
+                if (currentOption == null) {
+                    throw new UnrecognizedOptionException("Cannot add value to an null option");
+                }
                 currentOption.addValueForProcessing(opt.substring(1));
                 currentOption.addValueForProcessing(value);
                 currentOption = null;
@@ -624,12 +670,16 @@ public class DefaultParser implements CommandLineParser
      *
      * @param token
      */
-    private String getLongPrefix(final String token)
+    @RequiresNonNull("options")
+    private @Nullable String getLongPrefix(final String token)
     {
         final String t = Util.stripLeadingHyphens(token);
 
         int i;
         String opt = null;
+        if ( t == null )
+            return null;
+
         for (i = t.length() - 2; i > 1; i--)
         {
             final String prefix = t.substring(0, i);
@@ -649,15 +699,20 @@ public class DefaultParser implements CommandLineParser
     private boolean isJavaProperty(final String token)
     {
         final String opt = token.substring(0, 1);
-        final Option option = options.getOption(opt);
+        final Option option = options != null ? options.getOption(opt) : null;
 
         return option != null && (option.getArgs() >= 2 || option.getArgs() == Option.UNLIMITED_VALUES);
     }
 
-    private void handleOption(Option option) throws ParseException
+    @RequiresNonNull({"cmd", "expectedOpts"})
+    private void handleOption(@Nullable Option option) throws ParseException
     {
         // check the previous option before handling the next one
         checkRequiredArgs();
+
+        if (option == null) {
+            throw new RuntimeException("Next option to process cannot be null. Encountered null Option to handle.");
+        }
 
         option = (Option) option.clone();
 
@@ -680,6 +735,7 @@ public class DefaultParser implements CommandLineParser
      *
      * @param option
      */
+    @RequiresNonNull("expectedOpts")
     private void updateRequiredOptions(final Option option) throws AlreadySelectedException
     {
         if (option.isRequired())
@@ -688,10 +744,12 @@ public class DefaultParser implements CommandLineParser
         }
 
         // if the option is in an OptionGroup make that option the selected option of the group
-        if (options.getOptionGroup(option) != null)
+        if (options != null && options.getOptionGroup(option) != null)
         {
             final OptionGroup group = options.getOptionGroup(option);
-
+            if (group == null) {
+                throw new RuntimeException("Option group found null for option " + option.toString());
+            }
             if (group.isRequired())
             {
                 expectedOpts.remove(group);
@@ -708,6 +766,7 @@ public class DefaultParser implements CommandLineParser
      * @param token the token (may contain leading dashes)
      * @return the list of matching option strings or an empty list if no matching option could be found
      */
+    @RequiresNonNull("options")
     private List<String> getMatchingLongOptions(final String token)
     {
         if (allowPartialMatching)
@@ -720,7 +779,9 @@ public class DefaultParser implements CommandLineParser
             if (options.hasLongOption(token))
             {
                 Option option = options.getOption(token);
-                matches.add(option.getLongOpt());
+                String longOption = option != null ? option.getLongOpt() : null;
+                if (longOption != null)
+                    matches.add(longOption);
             }
 
             return matches;
@@ -754,13 +815,14 @@ public class DefaultParser implements CommandLineParser
      * @throws ParseException if there are any problems encountered
      *                        while parsing the command line token.
      */
+    @RequiresNonNull({"cmd", "expectedOpts"})
     protected void handleConcatenatedOptions(final String token) throws ParseException
     {
         for (int i = 1; i < token.length(); i++)
         {
             final String ch = String.valueOf(token.charAt(i));
 
-            if (options.hasOption(ch))
+            if (options != null && options.hasOption(ch))
             {
                 handleOption(options.getOption(ch));
 

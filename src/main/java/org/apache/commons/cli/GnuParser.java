@@ -76,7 +76,7 @@ public class GnuParser extends Parser
                 }
                 else
                 {
-                    if (opt.indexOf('=') != -1 && options.hasOption(opt.substring(0, opt.indexOf('='))))
+                    if (opt != null && opt.indexOf('=') != -1 && options.hasOption(opt.substring(0, opt.indexOf('='))))
                     {
                         // the format is --foo=value or -foo=value
                         tokens.add(arg.substring(0, arg.indexOf('='))); // --foo

@@ -17,6 +17,9 @@
 
 package org.apache.commons.cli;
 
+import org.checkerframework.checker.nullness.qual.KeyFor;
+import org.checkerframework.checker.nullness.qual.Nullable;
+
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Iterator;
@@ -32,10 +35,10 @@ public class OptionGroup implements Serializable
     private static final long serialVersionUID = 1L;
     
     /** hold the options */
-    private final Map<String, Option> optionMap = new LinkedHashMap<String, Option>();
+    private final Map< @Nullable String, Option> optionMap = new LinkedHashMap<>();
 
     /** the name of the selected option */
-    private String selected;
+    @Nullable private String selected;
 
     /** specified whether this group is required */
     private boolean required;
@@ -59,7 +62,7 @@ public class OptionGroup implements Serializable
      * @return the names of the options in this group as a 
      * <code>Collection</code>
      */
-    public Collection<String> getNames()
+    public Collection<@KeyFor("this.optionMap") @Nullable String> getNames()
     {
         // the key set is the collection of names
         return optionMap.keySet();
@@ -81,7 +84,7 @@ public class OptionGroup implements Serializable
      * @throws AlreadySelectedException if an option from this group has 
      * already been selected.
      */
-    public void setSelected(final Option option) throws AlreadySelectedException
+    public void setSelected(@Nullable final Option option) throws AlreadySelectedException
     {
         if (option == null)
         {
@@ -106,7 +109,7 @@ public class OptionGroup implements Serializable
     /**
      * @return the selected option name
      */
-    public String getSelected()
+    public @Nullable String getSelected()
     {
         return selected;
     }

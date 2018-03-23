@@ -17,6 +17,8 @@
 
 package org.apache.commons.cli;
 
+import org.checkerframework.checker.nullness.qual.Nullable;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -44,18 +46,17 @@ public class Options implements Serializable
     private static final long serialVersionUID = 1L;
 
     /** a map of the options with the character key */
-    private final Map<String, Option> shortOpts = new LinkedHashMap<String, Option>();
+    private final Map<@Nullable String, Option> shortOpts = new LinkedHashMap<>();
 
     /** a map of the options with the long key */
-    private final Map<String, Option> longOpts = new LinkedHashMap<String, Option>();
+    private final Map<@Nullable String, Option> longOpts = new LinkedHashMap<>();
 
     /** a map of the required options */
     // N.B. This can contain either a String (addOption) or an OptionGroup (addOptionGroup)
-    // TODO this seems wrong
-    private final List<Object> requiredOpts = new ArrayList<Object>();
+    private final List<Object> requiredOpts = new ArrayList<>();
 
     /** a map of the option groups */
-    private final Map<String, OptionGroup> optionGroups = new LinkedHashMap<String, OptionGroup>();
+    private final Map<@Nullable String, OptionGroup> optionGroups = new LinkedHashMap<>();
 
     /**
      * Add the specified option group.
@@ -106,7 +107,7 @@ public class Options implements Serializable
      * @return the resulting Options instance
      * @since 1.3
      */
-    public Options addOption(final String opt, final String description)
+    public Options addOption(@Nullable final String opt, final String description)
     {
         addOption(opt, null, false, description);
         return this;
@@ -124,7 +125,7 @@ public class Options implements Serializable
      * @param description Self-documenting description
      * @return the resulting Options instance
      */
-    public Options addOption(final String opt, final boolean hasArg, final String description)
+    public Options addOption(@Nullable final String opt, final boolean hasArg, final String description)
     {
         addOption(opt, null, hasArg, description);
         return this;
@@ -143,7 +144,7 @@ public class Options implements Serializable
      * @param description Self-documenting description
      * @return the resulting Options instance
      */
-    public Options addOption(final String opt, final String longOpt, final boolean hasArg, final String description)
+    public Options addOption(@Nullable final String opt, @Nullable final String longOpt, final boolean hasArg, final String description)
     {
         addOption(new Option(opt, longOpt, hasArg, description));
         return this;
@@ -250,7 +251,7 @@ public class Options implements Serializable
      * @param opt short or long name of the {@link Option}
      * @return the option represented by opt
      */
-    public Option getOption(String opt)
+    public @Nullable Option getOption(@Nullable String opt)
     {
         opt = Util.stripLeadingHyphens(opt);
 
@@ -269,21 +270,21 @@ public class Options implements Serializable
      * @return the options matching the partial name specified, or an empty list if none matches
      * @since 1.3
      */
-    public List<String> getMatchingOptions(String opt)
+    public List<String> getMatchingOptions(@Nullable String opt)
     {
         opt = Util.stripLeadingHyphens(opt);
         
-        final List<String> matchingOpts = new ArrayList<String>();
+        final List<String> matchingOpts = new ArrayList<>();
 
         // for a perfect match return the single option only
         if (longOpts.keySet().contains(opt))
         {
-            return Collections.singletonList(opt);
+            return opt != null ? Collections.singletonList(opt) : new ArrayList<String>();
         }
 
         for (final String longOpt : longOpts.keySet())
         {
-            if (longOpt.startsWith(opt))
+            if (longOpt != null && opt != null && longOpt.startsWith(opt))
             {
                 matchingOpts.add(longOpt);
             }
@@ -298,7 +299,7 @@ public class Options implements Serializable
      * @param opt short or long name of the {@link Option}
      * @return true if the named {@link Option} is a member of this {@link Options}
      */
-    public boolean hasOption(String opt)
+    public boolean hasOption(@Nullable String opt)
     {
         opt = Util.stripLeadingHyphens(opt);
 
@@ -312,7 +313,7 @@ public class Options implements Serializable
      * @return true if the named {@link Option} is a member of this {@link Options}
      * @since 1.3
      */
-    public boolean hasLongOption(String opt)
+    public boolean hasLongOption(@Nullable String opt)
     {
         opt = Util.stripLeadingHyphens(opt);
 
@@ -326,7 +327,7 @@ public class Options implements Serializable
      * @return true if the named {@link Option} is a member of this {@link Options}
      * @since 1.3
      */
-    public boolean hasShortOption(String opt)
+    public boolean hasShortOption(@Nullable String opt)
     {
         opt = Util.stripLeadingHyphens(opt);
 
@@ -339,9 +340,9 @@ public class Options implements Serializable
      * @param opt the option whose OptionGroup is being queried.
      * @return the OptionGroup if <code>opt</code> is part of an OptionGroup, otherwise return null
      */
-    public OptionGroup getOptionGroup(final Option opt)
+    public @Nullable OptionGroup getOptionGroup(@Nullable final Option opt)
     {
-        return optionGroups.get(opt.getKey());
+        return opt != null ? optionGroups.get(opt.getKey()) : optionGroups.get(null);
     }
 
     /**

@@ -17,6 +17,8 @@
 
 package org.apache.commons.cli;
 
+import org.checkerframework.checker.nullness.qual.Nullable;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -38,10 +40,10 @@ public class PosixParser extends Parser
     private boolean eatTheRest;
 
     /** holder for the current option */
-    private Option currentOption;
+    @Nullable private Option currentOption;
 
     /** the command line Options */
-    private Options options;
+    @Nullable private Options options;
 
     /**
      * Resets the members to their original state i.e. remove
@@ -92,12 +94,15 @@ public class PosixParser extends Parser
      * @return The flattened <code>arguments</code> String array.
      */
     @Override
-    protected String[] flatten(final Options options, final String[] arguments, final boolean stopAtNonOption) throws ParseException
+    protected String[] flatten(@Nullable final Options options, final String @Nullable [] arguments, final boolean stopAtNonOption) throws ParseException
     {
         init();
         this.options = options;
 
         // an iterator for the command line tokens
+        if (arguments == null) {
+            return tokens.toArray(new String[tokens.size()]);
+        }
         final Iterator<String> iter = Arrays.asList(arguments).iterator();
 
         // process each command line token
@@ -118,7 +123,8 @@ public class PosixParser extends Parser
                 final int pos = token.indexOf('=');
                 final String opt = pos == -1 ? token : token.substring(0, pos); // --foo
                 
-                final List<String> matchingOpts = options.getMatchingOptions(opt);
+                final List<String> matchingOpts = options != null ?
+                        options.getMatchingOptions(opt) : new ArrayList<String>();
 
                 if (matchingOpts.isEmpty())
                 {
@@ -130,8 +136,11 @@ public class PosixParser extends Parser
                 }
                 else
                 {
-                    currentOption = options.getOption(matchingOpts.get(0));
-                    
+                    currentOption = options != null ? options.getOption(matchingOpts.get(0)) : null;
+
+                    if (currentOption == null)
+                        throw new UnrecognizedOptionException("Cannot find option for: " + matchingOpts.get(0));
+
                     tokens.add("--" + currentOption.getLongOpt());
                     if (pos != -1)
                     {
@@ -142,11 +151,11 @@ public class PosixParser extends Parser
 
             else if (token.startsWith("-"))
             {
-                if (token.length() == 2 || options.hasOption(token))
+                if (token.length() == 2 || (options != null && options.hasOption(token)))
                 {
                     processOptionToken(token, stopAtNonOption);
                 }
-                else if (!options.getMatchingOptions(token).isEmpty())
+                else if (options != null && !options.getMatchingOptions(token).isEmpty())
                 {
                     final List<String> matchingOpts = options.getMatchingOptions(token);
                     if (matchingOpts.size() > 1)
@@ -154,7 +163,12 @@ public class PosixParser extends Parser
                         throw new AmbiguousOptionException(token, matchingOpts);
                     }
                     final Option opt = options.getOption(matchingOpts.get(0));
-                    processOptionToken("-" + opt.getLongOpt(), stopAtNonOption);
+
+                    if (opt  != null)
+                        processOptionToken("-" + opt.getLongOpt(), stopAtNonOption);
+                    else {
+                        throw new UnrecognizedOptionException("Cannot find any option for: " + matchingOpts.get(0));
+                    }
                 }
                 // requires bursting
                 else
@@ -221,12 +235,12 @@ public class PosixParser extends Parser
      */
     private void processOptionToken(final String token, final boolean stopAtNonOption)
     {
-        if (stopAtNonOption && !options.hasOption(token))
+        if (stopAtNonOption && options != null && !options.hasOption(token))
         {
             eatTheRest = true;
         }
 
-        if (options.hasOption(token))
+        if (options != null && options.hasOption(token))
         {
             currentOption = options.getOption(token);
         }
@@ -266,12 +280,12 @@ public class PosixParser extends Parser
         {
             final String ch = String.valueOf(token.charAt(i));
 
-            if (options.hasOption(ch))
+            if (options != null && options.hasOption(ch))
             {
                 tokens.add("-" + ch);
-                currentOption = options.getOption(ch);
+                currentOption = options != null? options.getOption(ch) : null;
 
-                if (currentOption.hasArg() && token.length() != i + 1)
+                if (currentOption != null && currentOption.hasArg() && token.length() != i + 1)
                 {
                     tokens.add(token.substring(i + 1));
 
