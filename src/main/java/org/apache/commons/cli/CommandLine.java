@@ -232,6 +232,7 @@ public class CommandLine implements Serializable
         {
             if (processedOption.equals(option))
             {
+                // This change is pull requested at: https://github.com/apache/commons-cli/pull/24/
                 List<String> valueList = processedOption.getValuesList();
                 if (valueList != null)
                     values.addAll(valueList);
@@ -262,10 +263,12 @@ public class CommandLine implements Serializable
     private @Nullable Option resolveOption(@Nullable String opt)
     {
         opt = Util.stripLeadingHyphens(opt);
+        // The change is pull requested at: https://github.com/apache/commons-cli/pull/24/
+        if (opt == null)
+            return null;
+
         for (final Option option : options)
         {
-            if (opt == null)
-                return null;
             if (opt.equals(option.getOpt()))
             {
                 return option;
@@ -475,6 +478,7 @@ public class CommandLine implements Serializable
      */
     protected void addOption(@Nullable final Option opt)
     {
+        //This change is pull requested at: https://github.com/apache/commons-cli/pull/24/
         if (opt != null)
             options.add(opt);
     }
