@@ -29,7 +29,7 @@
 
   <inceptionYear>2002</inceptionYear>
   <description>
-    Apache Commons CLI provides a simple API for presenting, processing and validating a command line interface.
+    Apache Commons CLI provides a simple API for presenting, processing and validating a command line interface. This project is configured to use checker-framework's Nullness type check system while compiling using maven. So, in order to compile code using checker-framework you just need to run `mvn compile`
   </description>
 
   <url>http://commons.apache.org/proper/commons-cli/</url>
@@ -307,7 +307,7 @@
           <artifactId>maven-checkstyle-plugin</artifactId>
           <version>2.15</version>
           <configuration>
-            <configLocation>${basedir}/src/conf/checkstyle.fxml</configLocation>
+            <configLocation>${basedir}/src/conf/checkstyle.xml</configLocation>
             <enableRulesSummary>false</enableRulesSummary>
             <suppressionsLocation>${basedir}/src/conf/checkstyle-suppressions.xml</suppressionsLocation>
           </configuration>

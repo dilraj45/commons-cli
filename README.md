@@ -46,7 +46,7 @@ Apache Commons CLI
 [![Build Status](https://travis-ci.org/apache/commons-cli.svg?branch=master)](https://travis-ci.org/apache/commons-cli)
 [![Coverage Status](https://coveralls.io/repos/github/apache/commons-cli/badge.svg?branch=master)](https://coveralls.io/github/apache/commons-cli?branch=master)
 
-Apache Commons CLI provides a simple API for presenting, processing and validating a command line interface.
+Apache Commons CLI provides a simple API for presenting, processing and validating a command line interface. This project is configured to use checker-framework's Nullness type check system while compiling using maven. So, in order to compile code using checker-framework you just need to run `mvn compile`
 
 Documentation
 -------------
@@ -101,4 +101,3 @@ Additional Resources
 + `#apache-commons` IRC channel on `irc.freenode.org`
 
 [ml]:https://commons.apache.org/mail-lists.html
-
